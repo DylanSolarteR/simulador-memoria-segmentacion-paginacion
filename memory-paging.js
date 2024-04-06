@@ -18,12 +18,14 @@ function initPaging(pagesBits, offsetBits) {
       frameNumber: i,
       pidProgram: undefined,
       size: offset,
+      lo: false,
+      segmentName: undefined,
       initialPosition: offset * i,
-      final_position: offset * i + (offset - 1),
+      finalPosition: offset * i + (offset - 1),
       isInternalFragmented: false,
       InternalFramentation: {
         initialPositionIF: undefined,
-        process_final_positionIF: undefined,
+        processFinalpositionIF: undefined,
       },
     });
   }
@@ -34,19 +36,20 @@ function initPaging(pagesBits, offsetBits) {
   for (let i = 0; i < soPages; i++) {
     frame = memory[i];
     frame.pidProgram = SO.pid;
-    if (soFrag != 0 && soPages == i+1) { //if thelast page has fragmentation
+    frame.segmentName = SO.name;
+    frame.lo = true;
+    if (soFrag != 0 && soPages == i + 1) {
+      //if thelast page has fragmentation
 
       frame.isInternalFragmented = true;
       frame.InternalFramentation.initialPositionIF =
         frame.initialPosition + soFrag - 1;
-      frame.InternalFramentation.process_final_positionIF =
+      frame.InternalFramentation.processFinalpositionIF =
         frame.InternalFramentation.initialPositionIF - 1;
     }
     memory[i] = frame;
-    
-    SO.frameTable.push({numPag: i, numMarco:i})
-    
 
+    SO.frameTable.push({ numPag: i, numMarco: i });
   }
   return { success: true, memory: memory };
 }
