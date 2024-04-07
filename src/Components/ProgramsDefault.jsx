@@ -99,9 +99,9 @@ function ProgramsDefault() {
   const programsDefault = ["Brave", "WSL", "Valorant", "Netbeans", "Inkscape"];
 
   return (
-    <div className="flex flex-col gap-2 p-4 justify-center items-center w-full">
-      <h1>Default Programs</h1>
-      <div className="border border-white flex justify-center items-center p-4">
+    <div className="flex flex-col gap-2 p-4 justify-center h-full items-start w-full">
+      <h1 className="font-bold text-xl">Default Programs</h1>
+      <div className="border w-full border-white flex justify-center items-center p-4">
         <ul className="w-full max-w-full flex flex-col justify-center gap-3">
           {programsDefault.map((item, index) => (
             <div key={index} className="bg-white flex justify-center px-14">

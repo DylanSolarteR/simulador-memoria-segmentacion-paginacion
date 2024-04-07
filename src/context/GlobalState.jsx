@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useState } from "react";
 import AppReducer from "./AppReducer";
+import initPaging from "../Logic/memory-paging";
 
 const initialState = {
   programs: [],
@@ -15,9 +16,16 @@ export const useGlobalState = () => {
 export const GlobalProvider = ({ children }) => {
   const [state, dispatch] = useReducer(AppReducer, initialState);
   const [counter, setCounter] = useState(1);
-  const [memMapBuild, setMemMapBuild] = useState("Default");
-  const [partitionsArray, setPartitionsArray] = useState([]);
-  const [fitAlgorithm, setFitAlgorithm] = useState("first");
+
+  const [memoryFree, setMemoryFree] = useState([]);
+  const [totalSizeMemoryFree, setTotalSizeMemoryFree] = useState(0);
+
+  const [memMapBuild, setMemMapBuild] = useState("default");
+  const [addProcessAlgorithm, setAddProcessAlgorithm] = useState("");
+  const [memory, setMemory] = useState([]);
+  const [offsetBits, setOffsetBits] = useState(16);
+  const [memorySchemeBits, setMemorySchemeBits] = useState(8);
+  // const [partitionsArray, setPartitionsArray] = useState([]);
 
   const [redsPIDs, SetRedsPIDs] = useState(new Set());
   const [greensPIDs, SetGreensPIDs] = useState(new Set());
@@ -91,16 +99,33 @@ export const GlobalProvider = ({ children }) => {
     });
   };
 
-  const changeMemMapBuild = (memType) => {
-    if (memType === "Fixed") setMemMapBuild("Fixed");
-    if (memType === "Variable") setMemMapBuild("Variable");
-    if (memType === "Dinamic") {
-      setMemMapBuild("Dinamic");
-      setFitAlgorithm("dinamic");
+  const initMemory = (scheme) => {
+    if (scheme === "paging") {
+      let initialMemory = initPaging(memorySchemeBits, offsetBits).memory;
+      let freeMemory = initialMemory.filter((frame) => frame.lo == false);
+      setMemory(initialMemory);
+      setMemoryFree(freeMemory);
+      setTotalSizeMemoryFree(
+        freeMemory.reduce((acc, frame) => {
+          return acc + frame.size;
+        }, 0)
+      );
     }
-    if (memType === "Default") {
-      setMemMapBuild("Default");
-      setFitAlgorithm("first");
+    if (scheme === "segmentation") {
+      setMemory([]);
+    }
+  };
+
+  const changeMemMapBuild = (memScheme) => {
+    if (memScheme === "paging") {
+      setMemMapBuild("paging");
+      setAddProcessAlgorithm("paging");
+      initMemory("paging");
+    }
+    if (memScheme === "segmentation") {
+      setMemMapBuild("segmentation");
+      setAddProcessAlgorithm("segmentation");
+      initMemory("segmentation");
     }
   };
 
@@ -110,12 +135,21 @@ export const GlobalProvider = ({ children }) => {
         programs: state.programs,
         addProgram,
         deleteProgram,
-        changeMemMapBuild,
         memMapBuild,
-        partitionsArray,
-        setPartitionsArray,
-        fitAlgorithm,
-        setFitAlgorithm,
+        changeMemMapBuild,
+        offsetBits,
+        setOffsetBits,
+        memorySchemeBits,
+        setMemorySchemeBits,
+        memory,
+        setMemory,
+        initMemory,
+        memoryFree,
+        setMemoryFree,
+        totalSizeMemoryFree,
+        setTotalSizeMemoryFree,
+        addProcessAlgorithm,
+        setAddProcessAlgorithm,
         addPIDRED,
         addPIDGREEN,
         addADDEDPIDS,
