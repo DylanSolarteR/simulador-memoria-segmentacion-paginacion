@@ -1,6 +1,7 @@
 import { Trash, Square, Play } from "lucide-react";
 import { useGlobalState } from "../context/GlobalState";
 import addProcessPaging from "../Logic/addProcess";
+import assignmentSegmentation from "../Logic/Segmentation";
 
 function ProcessList() {
   const {
@@ -11,6 +12,8 @@ function ProcessList() {
     memoryFree,
     setMemoryFree,
     totalSizeMemoryFree,
+    dinamicMemorySize,
+    setDinamicMemorySize,
     setTotalSizeMemoryFree,
     offsetBits,
     addProcessAlgorithm,
@@ -25,7 +28,7 @@ function ProcessList() {
     addedPIDs,
   } = useGlobalState();
 
-  function addToMemory(pid) {
+  async function addToMemory(pid) {
     let program = programs.find((program) => program.pid == pid);
     if (!memory.length) {
       addPIDRED(pid);
@@ -63,6 +66,36 @@ function ProcessList() {
         return;
       }
     }
+    if (addProcessAlgorithm == "segmentation") {
+      const { success, memoryResult } = await assignmentSegmentation(
+        {
+          size: 16777216,
+          partitions: memory,
+          freeMemory: dinamicMemorySize,
+          freeMemoryPartitions: totalSizeMemoryFree,
+          fullMemory: 16777216 - dinamicMemorySize - totalSizeMemoryFree,
+        },
+        program,
+        2 ** offsetBits,
+        memoryFree
+      );
+      if (success) {
+        let arrayMemory = [...memoryResult.partitions];
+        let freeMemory = arrayMemory.filter((frame) => frame.lo == false);
+        setMemory(memoryResult.partitions);
+        setMemoryFree(freeMemory);
+        setTotalSizeMemoryFree(memoryResult.freeMemoryPartitions);
+        setDinamicMemorySize(memoryResult.freeMemory);
+        addADDEDPIDS(pid);
+        removePIDRED(pid);
+        addPIDGREEN(pid);
+        return;
+      } else {
+        removePIDGREEN(pid);
+        addPIDRED(pid);
+        return;
+      }
+    }
   }
 
   function retrieveFromMemory(pid) {
@@ -70,35 +103,58 @@ function ProcessList() {
       addPIDRED(pid);
       return;
     }
+
     if (addedPIDs.has(pid)) {
-      let array = memory.map((frame) => {
-        if (frame.pidProgram == pid) {
-          frame.pidProgram = undefined;
-          frame.lo = false;
-          frame.segmentName = undefined;
-          frame.isInternalFragmented = false;
-          frame.InternalFragmentation = {
-            initialPositionIF: undefined,
-            processFinalpositionIF: undefined,
-            processSize: undefined,
-            fragSize: undefined,
-          };
-        }
-        return frame;
-      });
-      let freeMemory = array.filter((frame) => frame.lo == false);
-      setMemory(array);
-      setMemoryFree(freeMemory);
-      setTotalSizeMemoryFree(
-        freeMemory
-          .filter((frame) => frame.lo == false)
-          .reduce((acc, frame) => {
-            return acc + frame.size;
-          }, 0)
-      );
-      removePIDGREEN(pid);
-      removeADDEDPIDs(pid);
-      removePIDRED(pid);
+      if (addProcessAlgorithm == "paging") {
+        let array = memory.map((frame) => {
+          if (frame.pidProgram == pid) {
+            frame.pidProgram = undefined;
+            frame.lo = false;
+            frame.segmentName = undefined;
+            frame.isInternalFragmented = false;
+            frame.InternalFragmentation = {
+              initialPositionIF: undefined,
+              processFinalpositionIF: undefined,
+              processSize: undefined,
+              fragSize: undefined,
+            };
+          }
+          return frame;
+        });
+        let freeMemory = array.filter((frame) => frame.lo == false);
+        setMemory(array);
+        setMemoryFree(freeMemory);
+        setTotalSizeMemoryFree(
+          freeMemory
+            .filter((frame) => frame.lo == false)
+            .reduce((acc, frame) => {
+              return acc + frame.size;
+            }, 0)
+        );
+        removePIDGREEN(pid);
+        removeADDEDPIDs(pid);
+        removePIDRED(pid);
+      }
+      if (addProcessAlgorithm == "segmentation") {
+        let size = 0;
+        let array = memory.map((partition) => {
+          if (partition.pid == pid) {
+            size += partition.size;
+            partition.name = undefined;
+            partition.pid = undefined;
+            partition.lo = false;
+          }
+          return partition;
+        });
+        let freeMemory = array.filter((frame) => frame.lo == false);
+        setMemory(array);
+        setMemoryFree(freeMemory);
+
+        setTotalSizeMemoryFree(totalSizeMemoryFree + size);
+        removePIDGREEN(pid);
+        removeADDEDPIDs(pid);
+        removePIDRED(pid);
+      }
     }
   }
 

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useGlobalState } from "../context/GlobalState";
 
 function MemMap() {
-  const { memMapBuild, memory, offsetBits } = useGlobalState();
+  const { memMapBuild, memory, offsetBits, dinamicMemorySize } =
+    useGlobalState();
 
   // const [sizeOcuppied, setSizeOcuppied] = useState(0);
   // const [sizeFree, setSizeFree] = useState(0);
@@ -29,14 +30,14 @@ function MemMap() {
   // }, [memory]);
 
   let offset = 2 ** offsetBits;
-  const memoryCanvas = () => {
+  const memoryCanvas = (type) => {
     return (
       <>
         <div
           id="Memory"
           className="w-full max-w-full h-full flex flex-col items-center justify-start outline outline-white py-4 overflow-auto"
         >
-          {partitionsTable}
+          {type == "paging" ? partitionsTable : partitionsTableSegmentation}
         </div>
         <div
           id="MemoryState"
@@ -63,6 +64,95 @@ function MemMap() {
       </>
     );
   };
+
+  const partitionsTableSegmentation = memory.map((partition, i) => {
+    return (
+      <div
+        key={i}
+        className={`flex flex-col w-full w-max-full h-full justify-center gap-0 items-center text-white`}
+      >
+        <div
+          className={`flex flex-row w-full w-max-full h-full py-0 my-0 justify-center items-center text-white`}
+        >
+          <div
+            className={` ${
+              i == 0 ? "justify-between" : "justify-end"
+            } w-full max-w-[10%] h-full flex flex-col  items-end text-center`}
+          >
+            {i == 0 && (
+              <div className="text-xs pr-1">
+                {" "}
+                {0}
+                {" KiB "}
+              </div>
+            )}
+
+            <div className="text-xs pr-1 ">
+              {Math.round(partition.final_position * 100) / 100}
+              {" KiB "}
+            </div>
+          </div>
+          <div
+            className={` ${
+              i == 0 ? "justify-between" : "justify-end"
+            } w-full max-w-[10%] h-full flex flex-col justify-end items-end text-center`}
+          >
+            {i == 0 && <div className="text-xs pr-1"> {0} B </div>}
+
+            <div className="text-xs pr-1 ">{partition.final_position} B </div>
+          </div>
+          <div
+            className={`w-full max-w-[50%] h-full border-2 border-white flex flex-col justify-center items-center text-center`}
+          >
+            <div
+              className={`w-full h-full border border-white text-center flex flex-row justify-center items-center "max-h-[70%]"
+            `}
+            >
+              {partition.name ? partition.name : ""}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`${
+            i != memory.length - 1 && "hidden"
+          } flex flex-row w-full w-max-full h-full justify-center items-center text-white`}
+        >
+          <div
+            className={`justify-end ${
+              !dinamicMemorySize && "hidden"
+            } w-full max-w-[10%] h-full flex flex-col  items-end text-center`}
+          >
+            <div className={`${!dinamicMemorySize && "hidden"} text-xs pr-1 `}>
+              {16384}
+              {" KiB "}
+            </div>
+          </div>
+          <div
+            className={`justify-end ${
+              !dinamicMemorySize && "hidden"
+            } w-full max-w-[10%] h-full flex flex-col justify-end items-end text-center`}
+          >
+            <div className={`${!dinamicMemorySize && "hidden"} text-xs pr-1 `}>
+              {16777215} B{" "}
+            </div>
+          </div>
+          <div
+            className={`${
+              i != memory.length - 1 && "hidden"
+            } w-full max-w-[50%] h-full border-2 border-white flex flex-col justify-center items-center text-center`}
+          >
+            <div
+              className={`w-full h-full border border-white text-center flex flex-row justify-center items-center "max-h-[70%]"
+            `}
+            >
+              {""}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  });
 
   const partitionsTable = memory.map((partition, i) => {
     return (
@@ -114,7 +204,7 @@ function MemMap() {
             } `}
           >
             Internal Fragmentation, Fragmentation size:{" "}
-            {partition.InternalFragmentation.fragSize}{" "}
+            {partition.InternalFragmentation?.fragSize}{" "}
           </div>
         </div>
         <div className="w-12 h-full border-2 border-white flex flex-col justify-center items-center text-center">
@@ -129,13 +219,13 @@ function MemMap() {
       case "paging":
         return (
           <div className="max-w-full w-full flex flex-col h-full max-h-full items-center justify-between">
-            {memoryCanvas()}
+            {memoryCanvas("paging")}
           </div>
         );
       case "segmentation":
         return (
           <div className="max-w-full w-full flex flex-col h-full max-h-full items-center justify-between">
-            {memoryCanvas()}
+            {memoryCanvas("segmentation")}
           </div>
         );
 

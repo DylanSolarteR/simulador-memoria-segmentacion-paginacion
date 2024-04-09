@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useState } from "react";
 import AppReducer from "./AppReducer";
 import initPaging from "../Logic/memory-paging";
+import initSegmentation from "../Logic/memory-segmentation";
 
 const initialState = {
   programs: [],
@@ -19,6 +20,8 @@ export const GlobalProvider = ({ children }) => {
 
   const [memoryFree, setMemoryFree] = useState([]);
   const [totalSizeMemoryFree, setTotalSizeMemoryFree] = useState(0);
+
+  const [dinamicMemorySize, setDinamicMemorySize] = useState(0);
 
   const [memMapBuild, setMemMapBuild] = useState("default");
   const [addProcessAlgorithm, setAddProcessAlgorithm] = useState("");
@@ -112,7 +115,11 @@ export const GlobalProvider = ({ children }) => {
       );
     }
     if (scheme === "segmentation") {
-      setMemory([]);
+      let { memory } = initSegmentation(memorySchemeBits, offsetBits);
+      setMemory(memory.partitions);
+      setTotalSizeMemoryFree(0);
+      setDinamicMemorySize(15728640);
+      setMemoryFree([]);
     }
   };
 
@@ -141,6 +148,8 @@ export const GlobalProvider = ({ children }) => {
         setOffsetBits,
         memorySchemeBits,
         setMemorySchemeBits,
+        dinamicMemorySize,
+        setDinamicMemorySize,
         memory,
         setMemory,
         initMemory,

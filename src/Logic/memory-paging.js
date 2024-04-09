@@ -8,7 +8,7 @@ export default function initPaging(pagesBits, offsetBits) {
   const memory = [];
   let SO = {
     pid: "SO",
-    name: "Windows 10",
+    name: "Sistema Operativo",
     size: 1048576,
     frameTable: [],
   };
